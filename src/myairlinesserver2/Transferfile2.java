@@ -152,6 +152,84 @@ class transferfile2 extends Thread implements Serializable {
         doutput.writeUTF("updateSuc");
     }
 
+    void checkPass() throws IOException, SQLException {
+        String username = dinput.readUTF();
+        String password = dinput.readUTF();
+        System.out.println("da nhan dc pass cu");
+        connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+        PreparedStatement stmt = connection.prepareStatement("select * from admin where username = ? and password= ?");
+        stmt.setString(1, username);
+        stmt.setString(2, password);
+        ResultSet rs = (ResultSet) stmt.executeQuery();
+        int numberRow = 0;
+        while (rs.next()) {
+            //doutput.writeUTF("success");
+            System.out.println("co 1 truong");
+            numberRow++;
+        }
+        if (numberRow != 0) {
+            doutput.writeUTF("success");
+            System.out.println("co");
+        }
+        if (numberRow == 0) {
+            doutput.writeUTF("fail");
+            System.out.println("khong");
+        }
+        connection.close();
+    }
+
+    void changePass() throws IOException {
+
+        String username = dinput.readUTF();
+        String password = dinput.readUTF();
+        System.out.println("da nhan dc pass moi");
+        try {
+            connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+            PreparedStatement stmt = connection.prepareStatement("update admin set password=? where username=?;");
+            stmt.setString(1, password);
+            stmt.setString(2, username);
+            stmt.execute();
+            doutput.writeUTF("success");
+        } catch (SQLException ex) {
+            Logger.getLogger(transferfile2.class.getName()).log(Level.SEVERE, null, ex);
+            doutput.writeUTF("fail");
+        } finally {
+            try {
+                connection.close();
+            } catch (SQLException ex) {
+                Logger.getLogger(transferfile2.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+    }
+
+    void signup() throws IOException, ClassNotFoundException {
+
+        Admin admin = new Admin();
+        ObjectInputStream objectInput = new ObjectInputStream(ClientSoc.getInputStream());
+
+        admin = (Admin) objectInput.readObject();
+        System.out.println("da nhan dc object admin");
+        try {
+            connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+            PreparedStatement stmt = connection.prepareStatement("insert into admin (name, phoneNumber, identifyNumber, email, address, username, password) values (?,?,?,?,?,?,?);");
+            stmt.setString(1, admin.getName());
+            stmt.setString(2, admin.getPhoneNumber());
+            stmt.setString(3, admin.getIdentifyNumber());
+            stmt.setString(4, admin.getEmail());
+            stmt.setString(5, admin.getAddress());
+            stmt.setString(6, admin.getUsername());
+            stmt.setString(7, admin.getPassword());
+            stmt.execute();
+            System.out.println("da nhan dc lenh chay");
+            connection.close();
+            doutput.writeUTF("singupSuc");
+        } catch (SQLException ex) {
+            Logger.getLogger(transferfile2.class.getName()).log(Level.SEVERE, null, ex);
+            doutput.writeUTF("signupFail");
+        }
+    }
+
     public void run() {
 
         while (true) {
@@ -170,6 +248,18 @@ class transferfile2 extends Thread implements Serializable {
                 } else if (Command.compareTo("update") == 0) {
                     System.out.println("\tupdate Command Received ...");
                     update();
+                    continue;
+                } else if (Command.compareTo("checkPass") == 0) {
+                    System.out.println("\tcheckPass Command Received ...");
+                    checkPass();
+                    continue;
+                } else if (Command.compareTo("changePass") == 0) {
+                    System.out.println("\tchangePass Command Received ...");
+                    changePass();
+                    continue;
+                } else if (Command.compareTo("signup") == 0) {
+                    System.out.println("\tsignup Command Received ...");
+                    signup();
                     continue;
                 }
 
